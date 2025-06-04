@@ -9,15 +9,18 @@ const bg = "dodgerblue";
 ctx.fillStyle = "dodgerblue";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-const player = new Player(new Vec2(100, 100));
+const arrowheadAngle = Math.PI / 6;
+const arrowColor = "red";
+
+const player = new Player(new Vec2(canvas.width / 2, canvas.height / 2));
 const mouse = new Vec2(0, 0);
 let dragging = false;
 let power = new Vec2(0, 0);
 
 requestAnimationFrame(loop);
 
-function loop(ms: number): void {
-  // TODO handle large ms from tabbing away
+function loop(_: number): void {
+  // TODO handle large timestep from tabbing away
   requestAnimationFrame(loop);
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -34,9 +37,8 @@ function update() {
 
 function draw(ctx: CanvasRenderingContext2D) {
   player.draw(ctx);
-  if (dragging) {
-    // TODO first set mag, reducing by player size
-    drawVec(mouse, power);
+  if (dragging && power.mag()) {
+    drawArrow();
   }
 }
 
@@ -97,21 +99,54 @@ function handleRelease() {
   // then presses with another finger
   // then lifts the first finger?
 
-  // player.launch(power);
+  player.launch(Vec2.scale(power, 0.2));
   power.x = 0;
   power.y = 0;
   dragging = false;
 }
 
-function drawVec(src: Vec2, vec: Vec2) {
-  ctx.strokeStyle = "red";
-  ctx.lineWidth = 4;
-  const translated = Vec2.add(vec, src);
+function drawLine(src: Vec2, dest: Vec2, width: number, color: string) {
+  ctx.strokeStyle = color;
+  ctx.lineCap = "round";
+  ctx.lineWidth = width;
   ctx.beginPath();
   ctx.moveTo(src.x, src.y);
-  ctx.lineTo(translated.x, translated.y);
+  ctx.lineTo(dest.x, dest.y);
   ctx.stroke();
+}
 
-  // two more small vectors, rotated by an angle relative to mouse
-  // to create the arrow head
+function drawArrow() {
+  const angle = angleBetween(mouse, player.pos);
+  const powerMag = power.mag();
+  const lineWidth = powerMag * 0.1;
+
+  ctx.fillStyle = "white";
+  ctx.fillText(powerMag.toString(), 600, 50);
+
+  drawLine(
+    player.pos,
+    Vec2.add(player.pos, vecFromAngle(angle, powerMag)),
+    lineWidth,
+    arrowColor
+  );
+  drawLine(
+    player.pos,
+    Vec2.add(player.pos, vecFromAngle(angle + arrowheadAngle, powerMag * 0.25)),
+    lineWidth,
+    arrowColor
+  );
+  drawLine(
+    player.pos,
+    Vec2.add(player.pos, vecFromAngle(angle - arrowheadAngle, powerMag * 0.25)),
+    lineWidth,
+    arrowColor
+  );
+}
+
+function vecFromAngle(angle: number, length: number) {
+  return new Vec2(Math.sin(angle), Math.cos(angle)).scale(length);
+}
+
+function angleBetween(a: Vec2, b: Vec2): number {
+  return Math.atan2(a.x - b.x, a.y - b.y);
 }

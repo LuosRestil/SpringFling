@@ -30,4 +30,9 @@ export class Player {
     ctx.arc(this.pos.x, this.pos.y, this.clickRadius, 0, Math.PI * 2);
     ctx.stroke();
   }
+
+  launch(power: Vec2) {
+    this.vel.x = power.x;
+    this.vel.y = power.y;
+  }
 }
